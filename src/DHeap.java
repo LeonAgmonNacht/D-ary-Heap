@@ -38,18 +38,20 @@ public class DHeap {
 	 * postcondition: isHeap()
 	 * size = array.length()
 	 * Returns number of comparisons along the function run.
+     * Complexity(O(
 	 */
 	public int arrayToHeap(DHeap_Item[] array1) {
 
-		array = array1;
+
 		size = array1.length;
 		int comparisonsMade = 0;
 
-		for (int i = 0; i < array1.length; i++) { // Setting pos
-			array1[i].setPos(i);
+		for (int i = 0; i < array1.length; i++) { // Initialisation of heap's array
+            array[i]= array1[i];
+			array[i].setPos(i);
 		}
 
-		for (int i = getSize() / 2; i > -1; i--) {
+		for (int i = parent(getSize()-1,d); i > -1; i--) {
 			comparisonsMade += heapifyDown(i);
 		}
 
@@ -73,6 +75,10 @@ public class DHeap {
 	public int heapifyDown(int elemIndex) {
 
 		DHeap_Item[] children = childrenNodes(elemIndex);
+		if(children.length == 0)
+        {
+            return 0;
+        }
 		int smallestChildIndex = findSmallestChild(elemIndex, children);
 		if (smallestChildIndex != elemIndex) {
 			switchItems(smallestChildIndex, elemIndex);
@@ -91,7 +97,7 @@ public class DHeap {
 	 */
 	public int findSmallestChild(int elemIndex, DHeap_Item[] children) {
 
-		DHeap_Item minItem = array[elemIndex];
+		DHeap_Item minItem = new DHeap_Item("",Integer.MAX_VALUE);
 
 		for (int i = 0; i < children.length; i++) {
 			if (children[i] != null && children[i].getKey() < minItem.getKey()) {
@@ -109,8 +115,22 @@ public class DHeap {
 	 * @return an Array with all the children of the given parent.
 	 */
 	private DHeap_Item[] childrenNodes(int elemIndex) {
-		DHeap_Item[] temp = new DHeap_Item[d];
-		for (int i = 0; i < d; i++) {
+	    int numOfChildren = 0;
+	    if(child(elemIndex,d,d)<getSize())
+        {
+            numOfChildren = d;
+        }
+        else
+        {
+	        if((d - (child(elemIndex,d,d) - getSize()-1))>0) {
+	            numOfChildren = (d - (child(elemIndex,d,d) - getSize()-1));
+	        }
+	        else{
+	            numOfChildren = 0;
+            }
+        }
+		DHeap_Item[] temp = new DHeap_Item[numOfChildren];
+		for (int i = 0; i < numOfChildren; i++) {
 			int childIndex = child(elemIndex, i, d);
 			if (childIndex < getSize()) {
 				temp[i] = array[child(elemIndex, i, d)];
@@ -141,10 +161,29 @@ public class DHeap {
 
 		if (getSize() == 0) return true;
 
-		// TODO: Implement. Make sure we are doing this in the best complexity possible.
-		return false;
-	}
 
+
+		return isSubHeap(0);
+	}
+    public boolean isSubHeap(int indexOfTop)
+    {
+        DHeap_Item[] childrenNodes = childrenNodes(indexOfTop);
+        if(childrenNodes.length==0)
+        {
+            return true;
+        }
+        if(array[findSmallestChild(indexOfTop, childrenNodes)].getKey()<array[indexOfTop].getKey())
+        {
+            for (DHeap_Item child:childrenNodes){
+                if(!isSubHeap(child.getPos()))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
 	/**
 	 * public static int parent(i,d), child(i,k,d)
@@ -157,12 +196,28 @@ public class DHeap {
 	 * Note that indices of arrays in Java start from 0.
 	 */
 	public static int parent(int i, int d) {
+
 		// TODO: check this.
-		return (i - 1) / d;
+        int wantedParent =(i+1)/d-1;
+        if(wantedParent >= 0) {
+            return wantedParent;
+        }
+        return 0;
+
 	}
 
+    /**
+     * precondition: i >= 0, d >= 2, 1 <= k <= d
+     * @param i the index of the father in array(pos)
+     * @param k the number of the child(counting from 1) to find
+     * @param d the number of maximum childs if an item
+     * @return index of wanted kth child of father in index in a d-ary heap.
+     * Complexity: O(1)(multiplying and adding integers)
+     */
 	public static int child(int i, int k, int d) {
-		return (d * i) + 1 + k;
+
+		return (d * (i+1))  + k-1;
+
 	}
 
 	/**
@@ -179,7 +234,8 @@ public class DHeap {
 	 */
 	public int Insert(DHeap_Item item) {
 		item.setPos(size);
-		array[size++] = item;
+		array[size] = item;
+		size+=1;
 
 		return heapifyUp(getSize() - 1);
 	}
@@ -231,7 +287,7 @@ public class DHeap {
 	 * postcondition: isHeap()
 	 */
 	public DHeap_Item Get_Min() {
-		return array[0];
+	    return array[0];
 	}
 
 	/**
@@ -245,10 +301,12 @@ public class DHeap {
 	 * isHeap()
 	 * <p>
 	 * postcondition: isHeap()
+     * Complexity:
 	 */
 	public int Decrease_Key(DHeap_Item item, int delta) {
-		// TODO: Implement.
-		return 0;
+		item.setKey(item.getKey()-delta);
+
+		return heapifyUp(item.getPos());
 	}
 
 	/**
@@ -266,7 +324,11 @@ public class DHeap {
 	public int Delete(DHeap_Item item) {
 
 		int itemPos = item.getPos();
-
+        if(itemPos == getSize()-1){
+            array[getSize()-1] = null;
+            size--;
+            return 0;
+        }
 		switchItems(itemPos, getSize() - 1);
 
 		array[getSize()-1] = null;
@@ -277,6 +339,7 @@ public class DHeap {
 		}
 
 		return heapifyDown(itemPos);
+
 	}
 
 	/**
